@@ -1,0 +1,48 @@
+---
+title: "Age of Public School Buildings in Washington, DC"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+All public school buildings in Washington, DC were built between 1886 and 2004. This interactive map allows you to find your local schools and see when their buildings were constructed.  
+  
+Click on a school to get its name and the year it was built.
+
+```{r, include=FALSE}
+library(readr)
+library(leaflet)
+#get data for map
+
+data<-read.csv(url("https://raw.githubusercontent.com/maecooper/IntMap/master/DC%20Public%20Schools.csv"))
+mapdata_cln<-data[!is.na(data$YEAR_BUILT),21:22]
+mapdata_na<-data[is.na(data$YEAR_BUILT),21:22]
+
+bldg_age<-data$YEAR_BUILT[!is.na(data$YEAR_BUILT)]
+
+labels_cln<-as.character(paste(data$SCHOOL_NAM[!is.na(data$YEAR_BUILT)],bldg_age,sep=', '))
+labels_na<-as.character(paste(data$SCHOOL_NAM[is.na(data$YEAR_BUILT)],"unknown year",sep=', '))
+
+#colors
+binpal <- colorBin("PuRd", as.integer(bldg_age), 5, pretty = FALSE, reverse=TRUE)
+
+```
+
+```{r }
+
+leaflet() %>%
+  addTiles() %>%
+  addCircleMarkers(lat=mapdata_cln$LATITUDE,lng=mapdata_cln$LONGITUDE,popup=labels_cln,
+                   weight=3,col=binpal(bldg_age),fillOpacity = 1) %>%
+  addCircleMarkers(lat=mapdata_na$LATITUDE,lng=mapdata_na$LONGITUDE,popup=labels_na,
+                   weight=3,col="#F065E9",fillOpacity = 0) %>%
+  addLegend(pal=colorBin("PuRd", bldg_age, 5, pretty = FALSE, reverse=TRUE),
+                        values = as.integer(bldg_age), title="Year Built",
+                          labFormat=labelFormat(digits=0,big.mark = ""))
+```
+
+The data for this map comes from Open Data DC, at https://opendata.dc.gov/datasets/public-schools  
+  
+Last updated: March 19, 2020
